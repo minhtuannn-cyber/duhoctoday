@@ -7,7 +7,24 @@ interface PostCardProps {
   variant?: "full" | "compact";
 }
 
+function isExternal(url: string) {
+  return url.startsWith("http://") || url.startsWith("https://");
+}
+
+function formatDate(dateStr: string) {
+  if (!dateStr) return "";
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
+  } catch {
+    return dateStr;
+  }
+}
+
 export default function PostCard({ post, variant = "full" }: PostCardProps) {
+  const imgSrc = post.coverImage || "/images/hero-banner.png";
+  const useUnoptimized = isExternal(imgSrc);
+
   if (variant === "compact") {
     return (
       <article
@@ -30,10 +47,11 @@ export default function PostCard({ post, variant = "full" }: PostCardProps) {
           }}
         >
           <Image
-            src={post.coverImage || "/images/university-campus.png"}
+            src={imgSrc}
             alt={post.title}
             fill
             style={{ objectFit: "cover" }}
+            unoptimized={useUnoptimized}
           />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -49,7 +67,9 @@ export default function PostCard({ post, variant = "full" }: PostCardProps) {
             </Link>
           </h3>
           <span style={{ fontSize: "0.75rem", color: "var(--color-text-dim)" }}>
-            ⏱ {post.readTime}
+            {post.publishedAt && `📅 ${formatDate(post.publishedAt)}`}
+            {post.publishedAt && post.readTime && " · "}
+            {post.readTime && `⏱ ${post.readTime}`}
           </span>
         </div>
       </article>
@@ -60,10 +80,11 @@ export default function PostCard({ post, variant = "full" }: PostCardProps) {
     <article className="card">
       <div style={{ position: "relative", height: "200px", overflow: "hidden" }}>
         <Image
-          src={post.coverImage || "/images/hero-banner.png"}
+          src={imgSrc}
           alt={post.title}
           fill
           style={{ objectFit: "cover" }}
+          unoptimized={useUnoptimized}
         />
         <div
           style={{
@@ -103,7 +124,9 @@ export default function PostCard({ post, variant = "full" }: PostCardProps) {
           }}
         >
           <span style={{ fontSize: "0.75rem", color: "var(--color-text-dim)" }}>
-            ⏱ {post.readTime}
+            {post.publishedAt && `📅 ${formatDate(post.publishedAt)}`}
+            {post.publishedAt && post.readTime && " · "}
+            {post.readTime && `⏱ ${post.readTime}`}
           </span>
           <Link href={`/bai-viet/${post.slug}`} className="read-more-link">
             Đọc thêm →
