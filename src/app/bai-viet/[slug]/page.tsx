@@ -6,24 +6,35 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import PageHero from "@/components/PageHero";
 import PostCard from "@/components/PostCard";
-import { getMockPosts } from "@/lib/notion";
+import { getPosts, getPostBySlug, getPostContent } from "@/lib/notion";
+import NotionRenderer from "@/lib/notion-renderer";
 
-export function generateStaticParams() {
-  return getMockPosts().map((p) => ({ slug: p.slug }));
+// Allow new slugs from Notion that weren't in generateStaticParams
+export const dynamicParams = true;
+
+// Revalidate every 60 seconds so new Notion content appears quickly
+export const revalidate = 60;
+
+export async function generateStaticParams() {
+  const posts = await getPosts();
+  return posts.map((p) => ({ slug: p.slug }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const post = getMockPosts().find((p) => p.slug === slug);
+  const post = await getPostBySlug(slug);
   if (!post) return { title: "Bài viết không tồn tại" };
   return { title: `${post.title} | DuHocToday`, description: post.excerpt };
 }
 
 export default async function BaiVietPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const posts = getMockPosts();
+  const posts = await getPosts();
   const post = posts.find((p) => p.slug === slug);
   if (!post) notFound();
+
+  // Fetch full content blocks from Notion
+  const blocks = await getPostContent(post.id);
 
   const related = posts.filter((p) => p.slug !== slug && p.category === post.category).slice(0, 3);
 
@@ -45,10 +56,16 @@ export default async function BaiVietPage({ params }: { params: Promise<{ slug: 
               </div>
             )}
             <article style={{ color: "var(--color-text-muted)", fontSize: "1rem", lineHeight: 1.9 }}>
-              <p style={{ fontSize: "1.1rem", lineHeight: 1.8, marginBottom: "1.5rem" }}>{post.excerpt}</p>
-              <div className="alert alert-info">
-                💡 Nội dung đầy đủ sẽ được cập nhật khi kết nối với Notion CMS. Hiện tại đang hiển thị bản tóm tắt.
-              </div>
+              {blocks.length > 0 ? (
+                <NotionRenderer blocks={blocks} />
+              ) : (
+                <>
+                  <p style={{ fontSize: "1.1rem", lineHeight: 1.8, marginBottom: "1.5rem" }}>{post.excerpt}</p>
+                  <div className="alert alert-info">
+                    💡 Nội dung đầy đủ sẽ được cập nhật khi kết nối với Notion CMS. Hiện tại đang hiển thị bản tóm tắt.
+                  </div>
+                </>
+              )}
             </article>
             <div className="divider" style={{ margin: "3rem 0" }} />
             <div style={{ textAlign: "center", marginBottom: "2rem" }}>

@@ -3,15 +3,18 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import PageHero from "@/components/PageHero";
 import PostCard from "@/components/PostCard";
-import { getMockPosts } from "@/lib/notion";
+import { getPosts } from "@/lib/notion";
 
 export const metadata: Metadata = {
   title: "Blog du học Đài Loan",
   description: "Tin tức, bài viết và chia sẻ kinh nghiệm du học Đài Loan từ đội ngũ DuHocToday.",
 };
 
+// Revalidate every 60 seconds so new posts appear quickly
+export const revalidate = 60;
+
 export default async function BlogPage() {
-  const posts = getMockPosts();
+  const posts = await getPosts();
 
   return (
     <>

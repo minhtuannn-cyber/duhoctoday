@@ -5,14 +5,17 @@ import Footer from "@/components/Footer";
 import AnimateOnScroll from "@/components/AnimateOnScroll";
 import TestimonialSlider from "@/components/TestimonialSlider";
 import FAQAccordion from "@/components/FAQAccordion";
-import { getMockPosts, getMockSchools, getMockScholarships } from "@/lib/notion";
+import { getPosts, getSchools, getScholarships } from "@/lib/notion";
+
+export const revalidate = 60;
 
 export default async function HomePage() {
-  const posts = getMockPosts();
+  const posts = await getPosts();
   const featured = posts.filter((p) => p.featured).slice(0, 3);
   const latest = posts.slice(0, 6);
-  const schools = getMockSchools().slice(0, 6);
-  const scholarships = getMockScholarships();
+  const allSchools = await getSchools();
+  const schools = allSchools.slice(0, 6);
+  const scholarships = await getScholarships();
 
   return (
     <>
