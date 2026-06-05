@@ -56,7 +56,7 @@ export default function Footer() {
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
               {[
                 { icon: "📍", text: "TP. Hồ Chí Minh & Hà Nội" },
-                { icon: "📞", text: "0924 893 388 (Zalo)" },
+                { icon: "📞", text: "0915 525 597 (Zalo)" },
                 { icon: "✉️", text: "info@duhoctoday.vn" },
                 { icon: "🕐", text: "9h – 21h, T2 – T7" },
               ].map(({ icon, text }) => (

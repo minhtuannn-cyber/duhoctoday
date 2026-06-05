@@ -56,6 +56,7 @@ const navItems = [
     ],
   },
   { label: "Dịch vụ", href: "/dich-vu" },
+  { label: "Tin tức", href: "/blog" },
 ];
 
 export default function Header() {
@@ -74,7 +75,7 @@ export default function Header() {
       {/* Top bar */}
       <div style={{ background: "var(--color-primary)", padding: "0.35rem 0" }}>
         <div className="container" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.8rem" }}>
-          <span>📞 Tư vấn miễn phí: <a href="tel:+84924893388" style={{ fontWeight: 600 }}>0924 893 388</a></span>
+          <span>📞 Tư vấn miễn phí: <a href="tel:+84915525597" style={{ fontWeight: 600 }}>0915 525 597</a></span>
           <span>✉️ <a href="mailto:info@duhoctoday.vn">info@duhoctoday.vn</a></span>
         </div>
       </div>
