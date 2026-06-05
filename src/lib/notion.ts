@@ -135,7 +135,7 @@ export async function getPosts(options?: {
       .filter((p): p is PageObjectResponse => "properties" in p)
       .map((page) => ({
         id: page.id,
-        title: getText(getProp(page, "Title")),
+        title: getText(getProp(page, "Title")) || getText(getProp(page, "Name")),
         slug: getText(getProp(page, "Slug")),
         excerpt: getText(getProp(page, "Excerpt")),
         category: getText(getProp(page, "Category")),
@@ -165,7 +165,7 @@ export async function getPostBySlug(slug: string): Promise<Post | null> {
 
     return {
       id: page.id,
-      title: getText(getProp(page, "Title")),
+      title: getText(getProp(page, "Title")) || getText(getProp(page, "Name")),
       slug: getText(getProp(page, "Slug")),
       excerpt: getText(getProp(page, "Excerpt")),
       category: getText(getProp(page, "Category")),
@@ -182,8 +182,13 @@ export async function getPostBySlug(slug: string): Promise<Post | null> {
 
 // ─── Post Content (Notion Blocks) ──────────────────────────────────────────
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function getPostContent(pageId: string): Promise<any[]> {
   try {
+    // Skip Notion API call if pageId is not a valid UUID (e.g. mock data IDs like "1", "2")
+    if (!UUID_REGEX.test(pageId)) return [];
+
     const cacheKey = `content:${pageId}`;
     const cached = getCached<any[]>(cacheKey);
     if (cached) return cached;
