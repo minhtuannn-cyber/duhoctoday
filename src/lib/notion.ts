@@ -108,6 +108,8 @@ export async function getPosts(options?: {
 }): Promise<Post[]> {
   try {
     const dbId = process.env.NOTION_POSTS_DB_ID;
+    console.log("[getPosts] NOTION_POSTS_DB_ID:", dbId ? `${dbId.slice(0, 8)}...` : "MISSING");
+    console.log("[getPosts] NOTION_API_KEY:", process.env.NOTION_API_KEY ? "SET" : "MISSING");
     if (!dbId) return getMockPosts();
 
     const filter: any = { and: [] };
@@ -131,6 +133,8 @@ export async function getPosts(options?: {
       page_size: options?.limit ?? 100,
     });
 
+    console.log("[getPosts] Notion returned", response.results.length, "results");
+
     return response.results
       .filter((p): p is PageObjectResponse => "properties" in p)
       .map((page) => ({
@@ -145,7 +149,8 @@ export async function getPosts(options?: {
         readTime: getText(getProp(page, "ReadTime")),
         featured: getText(getProp(page, "Featured")) as unknown as boolean,
       }));
-  } catch {
+  } catch (error) {
+    console.error("[getPosts] ERROR — falling back to mock:", error);
     return getMockPosts();
   }
 }
