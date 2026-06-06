@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import PageHero from "@/components/PageHero";
-import PostCard from "@/components/PostCard";
+import BlogList from "@/components/BlogList";
 import { getPosts } from "@/lib/notion";
 
 export const metadata: Metadata = {
@@ -27,11 +27,7 @@ export default async function BlogPage() {
               <span className="section-label">Bài viết mới</span>
               <h2 className="section-title">Khám phá <span className="gradient-text">bài viết</span> mới nhất</h2>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: "1.5rem" }}>
-              {posts.map((post) => (
-                <PostCard key={post.slug} post={post} />
-              ))}
-            </div>
+            <BlogList posts={posts} />
           </div>
         </section>
       </main>
