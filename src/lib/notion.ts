@@ -1,16 +1,24 @@
-// @ts-nocheck — Notion SDK types vary by version; mock data fallback ensures runtime safety
-import { Client } from "@notionhq/client";
-import {
-  PageObjectResponse,
-  DatabaseObjectResponse,
-  QueryDatabaseResponse,
-  BlockObjectResponse,
-  ListBlockChildrenResponse,
-} from "@notionhq/client/build/src/api-endpoints";
+// @ts-nocheck — Using direct Notion REST API (fetch) to avoid Turbopack tree-shaking issues with SDK
 
-const notion = new Client({
-  auth: process.env.NOTION_API_KEY,
-});
+const NOTION_API_KEY = process.env.NOTION_API_KEY || "";
+const NOTION_VERSION = "2022-06-28";
+
+async function notionFetch(endpoint: string, body?: any): Promise<any> {
+  const res = await fetch(`https://api.notion.com/v1${endpoint}`, {
+    method: body ? "POST" : "GET",
+    headers: {
+      "Authorization": `Bearer ${NOTION_API_KEY}`,
+      "Notion-Version": NOTION_VERSION,
+      "Content-Type": "application/json",
+    },
+    ...(body ? { body: JSON.stringify(body) } : {}),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Notion API ${res.status}: ${text}`);
+  }
+  return res.json();
+}
 
 // ─── Simple In-Memory Cache ────────────────────────────────────────────────
 
@@ -79,8 +87,8 @@ export interface Scholarship {
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
-function getProp(page: PageObjectResponse, key: string): any {
-  return (page.properties as any)[key];
+function getProp(page: any, key: string): any {
+  return page.properties?.[key];
 }
 
 function getText(prop: any): string {
@@ -126,8 +134,7 @@ export async function getPosts(options?: {
       });
     }
 
-    const response: QueryDatabaseResponse = await notion.databases.query({
-      database_id: dbId,
+    const response = await notionFetch(`/databases/${dbId}/query`, {
       filter: filter.and.length ? filter : undefined,
       sorts: [{ property: "PublishedAt", direction: "descending" }],
       page_size: options?.limit ?? 100,
@@ -136,7 +143,7 @@ export async function getPosts(options?: {
     console.log("[getPosts] Notion returned", response.results.length, "results");
 
     return response.results
-      .filter((p): p is PageObjectResponse => "properties" in p)
+      .filter((p: any) => "properties" in p)
       .map((page) => ({
         id: page.id,
         title: getText(getProp(page, "Title")) || getText(getProp(page, "Name")),
@@ -160,12 +167,11 @@ export async function getPostBySlug(slug: string): Promise<Post | null> {
     const dbId = process.env.NOTION_POSTS_DB_ID;
     if (!dbId) return getMockPosts().find((p) => p.slug === slug) ?? null;
 
-    const response = await notion.databases.query({
-      database_id: dbId,
+    const response = await notionFetch(`/databases/${dbId}/query`, {
       filter: { property: "Slug", rich_text: { equals: slug } },
     });
 
-    const page = response.results[0] as PageObjectResponse;
+    const page = response.results[0];
     if (!page) return null;
 
     return {
@@ -202,12 +208,9 @@ export async function getPostContent(pageId: string): Promise<any[]> {
     let cursor: string | undefined = undefined;
 
     do {
-      const response: ListBlockChildrenResponse =
-        await notion.blocks.children.list({
-          block_id: pageId,
-          start_cursor: cursor,
-          page_size: 100,
-        });
+      const params = new URLSearchParams({ page_size: "100" });
+      if (cursor) params.set("start_cursor", cursor);
+      const response = await notionFetch(`/blocks/${pageId}/children?${params}`);
 
       blocks.push(...response.results);
       cursor = response.has_more ? (response.next_cursor ?? undefined) : undefined;
@@ -232,14 +235,13 @@ export async function getSchools(region?: string): Promise<School[]> {
       ? { property: "Region", select: { equals: region } }
       : undefined;
 
-    const response = await notion.databases.query({
-      database_id: dbId,
+    const response = await notionFetch(`/databases/${dbId}/query`, {
       filter,
       sorts: [{ property: "Ranking", direction: "ascending" }],
     });
 
     return response.results
-      .filter((p): p is PageObjectResponse => "properties" in p)
+      .filter((p: any) => "properties" in p)
       .map((page) => ({
         id: page.id,
         name: getText(getProp(page, "Name")),
@@ -268,13 +270,12 @@ export async function getScholarships(): Promise<Scholarship[]> {
     const dbId = process.env.NOTION_SCHOLARSHIPS_DB_ID;
     if (!dbId) return getMockScholarships();
 
-    const response = await notion.databases.query({
-      database_id: dbId,
+    const response = await notionFetch(`/databases/${dbId}/query`, {
       sorts: [{ property: "Deadline", direction: "ascending" }],
     });
 
     return response.results
-      .filter((p): p is PageObjectResponse => "properties" in p)
+      .filter((p: any) => "properties" in p)
       .map((page) => ({
         id: page.id,
         title: getText(getProp(page, "Title")),
